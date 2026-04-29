@@ -1,0 +1,4 @@
+.DS_Store
+*.log
+shadcn-swiftbar-action.sh
+.shecan_config

@@ -1,0 +1,125 @@
+#!/bin/bash
+
+set -e
+
+DNS1="178.22.122.101"
+DNS2="185.51.200.1"
+
+INSTALL_DIR="__INSTALL_DIR__"
+ICON_ON="$INSTALL_DIR/icons/on-notification.png"
+ICON_OFF="$INSTALL_DIR/icons/on-notification.png"
+
+BACKUP_FILE="$HOME/.shecan_dns_backup"
+LOG_FILE="$HOME/.shecan.log"
+
+notify() {
+  TITLE="$1"
+  MESSAGE="$2"
+  ICON="$3"
+
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    terminal-notifier -title "$TITLE" -message "$MESSAGE" -contentImage "$ICON" -ignoreDnD
+  else
+    osascript -e "display notification \"$MESSAGE\" with title \"$TITLE\""
+  fi
+}
+
+get_active_service() {
+  DEFAULT_IFACE=$(route -n get default 2>/dev/null | awk '/interface:/{print $2; exit}')
+
+  if [ -n "$DEFAULT_IFACE" ]; then
+    SERVICE=$(
+      /usr/sbin/networksetup -listallhardwareports |
+        awk -v iface="$DEFAULT_IFACE" '
+          /^Hardware Port: / { port=substr($0, 16) }
+          /^Device: / && substr($0, 9) == iface { print port; exit }
+        '
+    )
+    if [ -n "$SERVICE" ]; then
+      echo "$SERVICE"
+      return
+    fi
+  fi
+
+  for service in "Wi-Fi" "Ethernet" "USB 10/100/1000 LAN" "Thunderbolt Bridge"; do
+    if /usr/sbin/networksetup -getinfo "$service" 2>/dev/null | grep -Eq '^IP address: ([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+      echo "$service"
+      return
+    fi
+  done
+}
+
+log() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
+}
+
+set_dns() {
+  SERVICE=$(get_active_service)
+  if [ -z "$SERVICE" ]; then
+    log "No active network service found!"
+    exit 1
+  fi
+  log "Using service: $SERVICE"
+  /usr/sbin/networksetup -getdnsservers "$SERVICE" > "$BACKUP_FILE"
+  sudo -n /usr/sbin/networksetup -setdnsservers "$SERVICE" $DNS1 $DNS2
+  log "DNS set to $DNS1, $DNS2"
+}
+
+restore_dns() {
+  SERVICE=$(get_active_service)
+  if [ -z "$SERVICE" ]; then
+    log "No active network service found!"
+    exit 1
+  fi
+  if [ ! -f "$BACKUP_FILE" ]; then
+    log "No backup file found!"
+    exit 1
+  fi
+  OLD_DNS=$(cat "$BACKUP_FILE")
+  if [[ "$OLD_DNS" == *"There aren't any DNS Servers set"* ]]; then
+    sudo -n /usr/sbin/networksetup -setdnsservers "$SERVICE" "Empty"
+  else
+    sudo -n /usr/sbin/networksetup -setdnsservers "$SERVICE" $OLD_DNS
+  fi
+  log "DNS restored"
+}
+
+update_ddns() {
+  CONFIG_FILE="$HOME/.shecan_config"
+  if [ ! -f "$CONFIG_FILE" ] || ! grep -q "DDNS_PASSWORD" "$CONFIG_FILE"; then
+    log "DDNS password not set. Skipping DDNS update."
+    log "To enable: echo 'DDNS_PASSWORD=your_password' > ~/.shecan_config"
+    return
+  fi
+  source "$CONFIG_FILE"
+  log "Updating Shecan DDNS..."
+  RESPONSE=$(curl --silent --show-error --fail \
+    --max-time 5 --retry 3 \
+    "https://ddns.shecan.ir/update?password=$DDNS_PASSWORD" || echo "FAILED")
+  if [[ "$RESPONSE" == "FAILED" ]]; then
+    log "DDNS update failed"
+  else
+    log "DDNS update success"
+  fi
+}
+
+case "$1" in
+  start)
+    set_dns
+    update_ddns
+    /usr/bin/open "https://shecan.ir"
+    notify "Shecan" "DNS Activated ✅" "$ICON_ON"
+    ;;
+  stop)
+    restore_dns
+    notify "Shecan" "DNS Disabled ❌" "$ICON_OFF"
+    ;;
+  status)
+    SERVICE=$(get_active_service)
+    echo "Service: $SERVICE"
+    /usr/sbin/networksetup -getdnsservers "$SERVICE"
+    ;;
+  *)
+    echo "Usage: shecan {start|stop|status}"
+    ;;
+esac
