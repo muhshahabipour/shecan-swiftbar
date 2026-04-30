@@ -43,6 +43,23 @@ shecan stop     # restore previous DNS
 shecan status   # show current DNS
 ```
 
+## DDNS (Optional)
+
+If you have a Shecan DDNS password, `install.sh` will ask for it during setup and save it to `~/.shecan_config`:
+
+```bash
+DDNS_PASSWORD=your_password
+```
+
+You can also set it manually at any time:
+
+```bash
+echo 'DDNS_PASSWORD=your_password' > ~/.shecan_config
+chmod 600 ~/.shecan_config
+```
+
+This file is never committed to git.
+
 ## File Structure
 
 ```
