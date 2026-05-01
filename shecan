@@ -11,6 +11,7 @@ ICON_OFF="$INSTALL_DIR/icons/on-notification.png"
 
 BACKUP_FILE="$HOME/.shecan_dns_backup"
 LOG_FILE="$HOME/.shecan.log"
+CONNECTED_AT_FILE="$HOME/.shecan_connected_at"
 
 notify() {
   TITLE="$1"
@@ -107,11 +108,13 @@ case "$1" in
   start)
     set_dns
     update_ddns
+    date +%s > "$CONNECTED_AT_FILE"
     /usr/bin/open "https://shecan.ir"
     notify "Shecan" "DNS Activated ✅" "$ICON_ON"
     ;;
   stop)
     restore_dns
+    rm -f "$CONNECTED_AT_FILE"
     notify "Shecan" "DNS Disabled ❌" "$ICON_OFF"
     ;;
   status)

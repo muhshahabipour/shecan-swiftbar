@@ -7,6 +7,24 @@ DNS2="185.51.200.1"
 
 ICON_ON="$INSTALL_DIR/icons/on-small.png"
 ICON_OFF="$INSTALL_DIR/icons/off-white.png"
+CONNECTED_AT_FILE="$HOME/.shecan_connected_at"
+
+format_uptime() {
+  local start=$1
+  local now elapsed h m s
+  now=$(date +%s)
+  elapsed=$(( now - start ))
+  h=$(( elapsed / 3600 ))
+  m=$(( (elapsed % 3600) / 60 ))
+  s=$(( elapsed % 60 ))
+  if (( h > 0 )); then
+    echo "${h}h ${m}m"
+  elif (( m > 0 )); then
+    echo "${m}m ${s}s"
+  else
+    echo "${s}s"
+  fi
+}
 
 icon_data() {
   /usr/bin/base64 < "$1" | /usr/bin/tr -d '\n'
@@ -54,6 +72,10 @@ if is_on; then
   echo "DNS: $DNS1, $DNS2"
   echo "---"
   echo "🔌 Stop Shecan | bash=$SHADCN_ACTION param1=stop terminal=false refresh=true"
+  if [ -f "$CONNECTED_AT_FILE" ]; then
+    START=$(cat "$CONNECTED_AT_FILE")
+    echo "⏱ $(format_uptime "$START") | color=gray size=12"
+  fi
 else
   echo "| image=$(icon_data "$ICON_OFF") tooltip=Shecan: disconnected"
   echo "---"
