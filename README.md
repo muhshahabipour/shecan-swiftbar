@@ -4,9 +4,9 @@ A [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin to toggle [Shecan](htt
 
 ![Shecan DNS Menu Bar Plugin](assets/preview.png)
 
-## اسکرین‌شات
+## Screenshot
 
-![اسکرین‌شات](assets/example.png)
+![SwiftBar menu (Shecan DNS)](assets/example.png)
 
 ## Features
 
