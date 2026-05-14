@@ -25,7 +25,7 @@ A [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin to toggle [Shecan](htt
 ## Install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/shecan-swiftbar.git
+git clone https://github.com/muhshahabipour/shecan-swiftbar.git
 cd shecan-swiftbar
 chmod +x install.sh
 ./install.sh
