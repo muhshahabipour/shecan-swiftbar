@@ -19,7 +19,7 @@ A [SwiftBar](https://github.com/swiftbar/SwiftBar) plugin to toggle [Shecan](htt
 ## Requirements
 
 - macOS 12+
-- [SwiftBar](https://github.com/swiftbar/SwiftBar)
+- [SwiftBar](https://github.com/swiftbar/SwiftBar) `brew install swiftbar`
 - `terminal-notifier` (optional, for richer notifications): `brew install terminal-notifier`
 
 ## Install
